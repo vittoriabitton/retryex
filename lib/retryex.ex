@@ -3,16 +3,30 @@ defmodule Retryex do
   Documentation for `Retryex`.
   """
 
-  @doc """
-  Hello world.
+  def retry(function, opts \\ []) do
+    retry_limit = Keyword.get(opts, :retry_limit, 3)
+    retry_attempts = 1
 
-  ## Examples
+    invoke_function_with_retry(function, retry_attempts, retry_limit)
+  end
 
-      iex> Retryex.hello()
-      :world
+  defp invoke_function_with_retry(function, retry_attempts, retry_limit) do
+    if retry_limit >= retry_attempts do
+      retry(function, retry_attempts, retry_limit)
+    else
+      function.()
+    end
+  end
 
-  """
-  def hello do
-    :world
+  defp retry(function, retry_attempts, retry_limit) do
+    case function.() do
+      {:error, _reason} ->
+        invoke_function_with_retry(function, retry_attempts + 1, retry_limit)
+
+      :error ->
+        invoke_function_with_retry(function, retry_attempts + 1, retry_limit)
+    end
+  catch
+    _type, _reason -> invoke_function_with_retry(function, retry_attempts + 1, retry_limit)
   end
 end
