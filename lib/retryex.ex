@@ -3,30 +3,28 @@ defmodule Retryex do
   Documentation for `Retryex`.
   """
 
+  @spec retry((() -> any), keyword) :: any
   def retry(function, opts \\ []) do
     retry_limit = Keyword.get(opts, :retry_limit, 3)
-    retry_attempts = 1
 
-    invoke_function_with_retry(function, retry_attempts, retry_limit)
+    Enum.reduce_while(1..retry_limit, 0, fn i, _acc ->
+      if i == retry_limit do
+        {:halt, function.()}
+      else
+        invoke_function_with_retry(function)
+      end
+    end)
   end
 
-  defp invoke_function_with_retry(function, retry_attempts, retry_limit) do
-    if retry_limit >= retry_attempts do
-      retry(function, retry_attempts, retry_limit)
-    else
-      function.()
+  defp invoke_function_with_retry(function) do
+    try do
+      case function.() do
+        {:error, reason} -> {:cont, {:error, reason}}
+        :error -> {:cont, :error}
+        result -> {:halt, result}
+      end
+    catch
+      type, reason -> {:cont, {type, reason}}
     end
-  end
-
-  defp retry(function, retry_attempts, retry_limit) do
-    case function.() do
-      {:error, _reason} ->
-        invoke_function_with_retry(function, retry_attempts + 1, retry_limit)
-
-      :error ->
-        invoke_function_with_retry(function, retry_attempts + 1, retry_limit)
-    end
-  catch
-    _type, _reason -> invoke_function_with_retry(function, retry_attempts + 1, retry_limit)
   end
 end

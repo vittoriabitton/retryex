@@ -14,7 +14,7 @@ defmodule RetryexTest do
         {:error, "error"}
       end
 
-      logs = capture_log(fn -> Retryex.retry(function, retry_attempts: 4) end)
+      logs = capture_log(fn -> Retryex.retry(function, retry_limit: 4) end)
 
       ocurrences = text_ocurrences(logs, "Running")
       assert ocurrences == 4
@@ -26,7 +26,7 @@ defmodule RetryexTest do
         :error
       end
 
-      logs = capture_log(fn -> Retryex.retry(function, retry_attempts: 4) end)
+      logs = capture_log(fn -> Retryex.retry(function, retry_limit: 4) end)
 
       ocurrences = text_ocurrences(logs, "Running")
       assert ocurrences == 4
@@ -40,7 +40,7 @@ defmodule RetryexTest do
 
       logs =
         capture_log(fn ->
-          assert_raise(RuntimeError, fn -> Retryex.retry(function, retry_attempts: 4) end)
+          assert_raise(RuntimeError, fn -> Retryex.retry(function, retry_limit: 4) end)
         end)
 
       ocurrences = text_ocurrences(logs, "Running")
@@ -50,7 +50,7 @@ defmodule RetryexTest do
     test "does not retry a function that runs successfully" do
       function = fn -> :ok end
 
-      assert :ok == Retryex.retry(function, retry_attempts: 4)
+      assert :ok == Retryex.retry(function, retry_limit: 4)
     end
   end
 
